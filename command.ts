@@ -41,6 +41,20 @@ DustJS.filters["camelCase"] = (value: string) => {
     return value.replace(/(_[a-zA-Z])/g, (match)=> match[1].toUpperCase());
 };
 
+let reservedWords = [
+    "break", "case", "catch", "class", "const", "continue", "debugger", "default", "delete", "do",
+    "else", "enum", "export", "extends", "false", "finally", "for", "function", "if", "import", "in",
+    "instanceof", "new", "null", "return", "super", "switch", "this", "throw", "true", "try", "typeof",
+    "var", "void", "while", "with"
+];
+DustJS.filters["avoidReservedWords"] = (value: string) => {
+    if (reservedWords.indexOf(value) >= 0) {
+        return `_${value}`;
+    }
+
+    return value;
+};
+
 DustJS.filters["convertType"] = (value : string)=> {
     switch (value.toLowerCase()) {
         case 'string':

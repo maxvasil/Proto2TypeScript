@@ -34,6 +34,11 @@ if (module.parent) {
             default: DEFAULT_SETTINGS.properties,
             boolean: true
         })
+        .options('g', {
+            alias: 'package',
+            describe: 'Package name',
+            default: DEFAULT_SETTINGS.package
+        })
         .argv;
 
     generate(argv);
