@@ -25,4 +25,4 @@ echo "Compilation OK"
 
 # Run the unit tests
 echo "Running mocha tests"
-mocha tests.js
+./node_modules/.bin/mocha tests.js

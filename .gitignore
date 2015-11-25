@@ -1,18 +1,14 @@
-lib-cov
-*.seed
-*.log
-*.csv
-*.dat
-*.out
-*.pid
-*.gz
-
-pids
-logs
-results
-
-npm-debug.log
+# Dependency directory
 node_modules
+npm-debug.log
+
+# Test-generated files
 tests/*.json
 tests/*.d.ts
 tests.js
+
+# For temporary files.
+tmp/
+
+# Other files/folders
+nul
