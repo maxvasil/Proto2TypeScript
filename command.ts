@@ -4,24 +4,26 @@
 import * as DustJS from "dustjs-linkedin";
 import * as fs from "fs";
 
-let argv = require('optimist')
-    .usage('Convert a ProtoBuf.js JSON description in TypeScript definitions.\nUsage: $0')
-    .demand('f')
-    .alias('f', 'file')
-    .describe('f', 'The JSON file')
-    .boolean('c')
-    .alias('c', 'camelCaseGetSet')
-    .describe('c', 'Generate getter and setters in camel case notation')
-    .default('c', true)
-    .boolean('u')
-    .alias('u', 'underscoreGetSet')
-    .describe('u', 'Generate getter and setters in underscore notation')
-    .default('u', false)
-    .boolean('p')
-    .alias('p', 'properties')
-    .describe('p', 'Generate properties')
-    .default('p', true)
-    .argv;
+export interface ISettings {
+    // Required parameters.
+    file: string;               // Path to input JSON file
+
+    // Optional parameters
+    outFile: string;            // Path to output file. If missed, then result will be in console output
+    camelCaseGetSet: boolean;   // Generate getter and setters in camel case notation
+    underscoreGetSet: boolean;  // Generate getter and setters in underscore notation
+    properties: boolean,        // Generate properties
+    package: string             // Result package name
+}
+
+export const DEFAULT_SETTINGS: ISettings = {
+    file: undefined,
+    outFile: undefined,
+    camelCaseGetSet: true,
+    underscoreGetSet: false,
+    properties: true,
+    package: "Proto2TypeScript"
+};
 
 // Keep line breaks
 DustJS.optimizers.format = (ctx, node) => node;
@@ -80,20 +82,19 @@ function loadDustTemplate(name : string) : void {
 }
 
 // Generate the names for the model, the types, and the interfaces
-function generateNames(model: any, prefix: string, name: string = "") : void{
+function generateNames(settings: ISettings, model: any, prefix: string, name: string = "") : void{
 
     model.fullPackageName = prefix + (name != "." ? name : "");
 
     // Copies the settings (I'm lazy)
-    model.properties = argv.properties;
-    model.camelCaseGetSet = argv.camelCaseGetSet;
-    model.underscoreGetSet = argv.underscoreGetSet;
+    model.properties = settings.properties;
+    model.camelCaseGetSet = settings.camelCaseGetSet;
+    model.underscoreGetSet = settings.underscoreGetSet;
 
     let newDefinitions = {};
 
     // Generate names for messages
     // Recursive call for all messages
-    let key;
     if (model.messages) {
         model.messages = model.messages.filter(function(message) {
             // Skip generation of typescript interfaces for extending messages,
@@ -103,19 +104,19 @@ function generateNames(model: any, prefix: string, name: string = "") : void{
             }
 
             newDefinitions[message.name] = "Builder";
-            generateNames(message,model.fullPackageName, "." + (model.name ? model.name : ""));
+            generateNames(settings, message, model.fullPackageName, "." + (model.name ? model.name : ""));
             return true;
         });
     }
 
-    for (key in model.messages) {
+    for (let key in model.messages) {
         let message = model.messages[key];
         newDefinitions[message.name] = "Builder";
-        generateNames(message,model.fullPackageName, "." + (model.name ? model.name : ""));
+        generateNames(settings, message, model.fullPackageName, "." + (model.name ? model.name : ""));
     }
 
     // Generate names for enums
-    for (key in model.enums) {
+    for (let key in model.enums) {
         let currentEnum = model.enums[key];
         newDefinitions[currentEnum.name] = "";
         currentEnum.fullPackageName = model.fullPackageName + (model.name ? "." + model.name : "");
@@ -123,17 +124,16 @@ function generateNames(model: any, prefix: string, name: string = "") : void{
 
     // For fields of types which are defined in the same message,
     // update the field type in consequence
-    for (key in model.fields) {
+    for (let key in model.fields) {
         let field = model.fields[key];
         if (typeof newDefinitions[field.type] !== "undefined") {
-
             field.type = model.name + "." + field.type;
         }
     }
 
     // Add the new definitions in the model for generate builders
     let definitions: any[] = [];
-    for (key in newDefinitions) {
+    for (let key in newDefinitions) {
         definitions.push({
             name: key,
             type: ((model.name ? (model.name + ".") : "") + key) + newDefinitions[key]
@@ -148,23 +148,34 @@ loadDustTemplate("interface");
 loadDustTemplate("enum");
 loadDustTemplate("builder");
 
-// Load the json file
-let model = JSON.parse(fs.readFileSync(argv.file).toString());
+export let generate = (settings: ISettings) => {
 
-// If a packagename isn't present, use a default package name
-if (!model.package) {
-    model.package = "Proto2TypeScript";
-}
+    // Merge the given settings with default one.
+    Object.keys(DEFAULT_SETTINGS).forEach(key => {
+        if (!(key in settings)) {
+            settings[key] = DEFAULT_SETTINGS[key];
+        }
+    });
 
-// Generates the names of the model
-generateNames(model, model.package);
+    // Load the json file
+    let json = fs.readFileSync(settings.file).toString();
+    let model = JSON.parse(json);
 
-// Render the model
-DustJS.render("module", model, (err, out) => {
-    if (err != null) {
-        console.error(err);
-        process.exit(1);
-    } else {
-        console.log(out);
-    }
-});
+    // Generate names of the model.
+    model.package = settings.package;
+    generateNames(settings, model, model.package);
+
+    // Generate result.
+    DustJS.render("module", model, (err, out) => {
+        if (err != null) {
+            console.error(err);
+            process.exit(1);
+        } else {
+            if (settings.outFile) {
+                fs.writeFileSync(settings.outFile, out);
+            } else {
+                console.log(out);
+            }
+        }
+    });
+};

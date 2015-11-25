@@ -2,11 +2,10 @@
     "compilerOptions": {
         "target": "es5",
         "module": "commonjs",
-        "emitDecoratorMetadata": true,
-        "experimentalDecorators": true,
         "inlineSourceMap": true
     },
     "files": [
+        "index.ts",
         "command.ts"
     ]
 }

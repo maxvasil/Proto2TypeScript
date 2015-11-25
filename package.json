@@ -2,9 +2,9 @@
   "name": "proto2ts",
   "version": "1.0.0",
   "description": "Generate TypeScript definitions from a Protocol Buffers model",
-  "main": "command.js",
+  "main": "index.js",
   "bin": {
-    "proto2ts": "command.js"
+    "proto2ts": "index.js"
   },
   "dependencies": {
     "optimist": "^0.6.1",

@@ -1,17 +1,14 @@
 /// <reference path="./definitions/node.d.ts" />
 /// <reference path="./definitions/mocha.d.ts" />
-/// <reference path="./definitions/expect.js.d.ts" />
 /// <reference path="./tests/complete.d.ts" />
 
-import assert = require("assert");
-
-var expect: (target?: any) => Expect.Root = require("expect.js");
-var ProtoBuf: any = require("protobufjs"); 
+var assert = require("assert");
+var ProtoBuf: any = require("protobufjs");
+var expect = require("expect.js");
 
 describe("Complete example", ()=> {
 
-	var builder : LSTransmission.ProtoBufBuilder = 
-		ProtoBuf.protoFromFile("./tests/complete.proto")
+	var builder = ProtoBuf.protoFromFile("./tests/complete.proto")
 			.build("LSTransmission");
 
 	describe("LatLng", ()=> {
@@ -89,7 +86,8 @@ describe("Complete example", ()=> {
 	describe("And check the enums", ()=> {
 		var patient = new builder.PatientModel();
 		patient.Id = "abcd";
-		patient.TriageStatus = LSTransmission.PatientModel.TriageStatusEnum.GREEN;
+        console.log(builder.PatientModel.TriageStatusEnum.GREEN);
+		patient.TriageStatus = builder.PatientModel.TriageStatusEnum.GREEN;
 
 		var patient2 = builder.PatientModel.decode(
 			patient.toArrayBuffer());
